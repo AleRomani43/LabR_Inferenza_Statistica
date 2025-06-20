@@ -70,10 +70,30 @@
 # importiamo i dati:
 library(readr)
 drug_consumption <- read_csv("Lab Rstudio Inferenza/Progetto/drug_consumption.csv")
-View(drug_consumptions)
+DC <- drug_consumption
 
 # applichiamo i seguenti cambiamenti al dataset: 
-# - rimuoviamo la prima colonna "ID"
-# - trasformiamo i valori della colonna Gender in variabili binarie: 1 <- female, 0 <- male
-# - riportiamo i valori de
+# - rimuoviamo la prima colonna "ID";
+# - trasformiamo i valori della colonna Gender in variabili binarie: 1 <- female, 0 <- male;
+# - riportiamo i valori di "Country" ed "Ethnicity" a variabili categoriche, poichè, apparentemente, non risulta esserci
+#   nessuna assunzione di ordinalità nella quantificazione.
+
+DC = DC[, -1]
+
+DC$Gender <- ifelse(DC$Gender > 0, 1, 0)  # 1 <- Female, 0 <- Male
+
+DC$Country <- factor(DC$Country, 
+                         levels = c(-0.57009, 0.96082, 0.24923, -0.09765, 
+                                    0.21128, -0.46841, -0.28519),
+                         labels = c("USA", "UK", "Canada", "Australia", 
+                                    "Ireland", "New Zealand", "Other"))
+
+DC$Ethnicity <- factor(DC$Ethnicity,
+                           levels = c(-0.31685, -0.50212, -1.10702, 0.12600,
+                                      -0.22166, 1.90725, 0.11440),
+                           labels = c("White", "Asian", "Black", "Mixed-White/Asian",
+                                      "Mixed-White/Black", "Mixed-Black/Asian", "Other"))
+View(DC)
+head(DC)
+
 
