@@ -95,5 +95,12 @@ DC$Ethnicity <- factor(DC$Ethnicity,
                                       "Mixed-White/Black", "Mixed-Black/Asian", "Other"))
 View(DC)
 head(DC)
+dim(DC)
+summary(DC)
+str(DC)
+
+# Osserviamo che non ci sono valori mancanti
+sum(is.na(DC))
+print(sapply(DC,function(x) any(is.na(x))))
 
 
