@@ -1,7 +1,8 @@
 #######################################
 ### DRUG CONSUMPTION CLASSIFICATION ###
 #######################################
-
+ggpairs(data = DC[ , c('Age', 'Gender', 'Education', 'Nscore', 'Escore', 'Oscore', 'Ascore', 'Cscore')], title ="Negros",
+        lower = list(continuous=wrap("points", alpha = 0.5, size=0.1)))
 ## CONTEXT: 
 # Database contains records for 1885 respondents. For each respondent 12 attributes are known: Personality measurements which include NEO-FFI-R (neuroticism, extraversion, openness to experience, agreeableness, and conscientiousness), BIS-11 (impulsivity), and ImpSS (sensation seeking), level of education, age, gender, country of residence and ethnicity.
 # All input attributes are originally categorical and are quantified. After quantification values of all input features can be considered as real-valued. In addition, participants were questioned concerning their use of 18 legal and illegal drugs (alcohol, amphetamines, amyl nitrite, benzodiazepine, cannabis, chocolate, cocaine, caffeine, crack, ecstasy, heroin, 
