@@ -275,9 +275,30 @@ fit$coefficients # restituisce la media del gruppo di riferimento più i (g-1) t
 # Affermiamo quindi che c'è differenza delle medie fra i gruppi.
 ###### REMINDER: bisogna ricordare che abbiamo eseguito una box-cox, quindi reinterpretare il risultato
 
-detach(PP)
-
 ### eseguiamo adesso un'analisi Two-ways ANOVA per capire se c’è interazione tra species e sex nel determinare mass
 
 # visualizziamo i dati
+par( mfrow = c( 1,2 ) )
+boxplot( mass ~ species, data = PP )
+boxplot( mass ~ sex, data = PP )
 
+# verifichiamo le solite ipotesi di normalità tra combinazioni di gruppi (3x2) e omogeneità delle varianze tra gruppi
+tapply( mass, sex:species, function( x ) shapiro.test( x )$p ) # p-value alti, va bene
+leveneTest( mass, sex:species )
+bartlett.test( mass, sex:species ) # p-value alti, va bene
+
+# costruiamo il modello con le due categorie e con tutte le interazioni tra categorie con
+anova2 = lm( mass ~ species * sex, data = PP )
+summary(anova2)
+
+anova(anova2) # per effettuare l'ANOVA in senso stretto
+
+# verifichiamo le ipotesi del modello, come abbiamo fatto per i modelli lineari
+qqnorm( anova2$res/summary(anova2)$sigma, pch = 16, main = 'QQ-norm of Std Residuals' )
+abline( 0, 1, lwd = 2, lty = 2, col = 'red' )
+shapiro.test(anova2$residuals)
+plot(anova2$fitted.values, anova2$residuals, xlab = "Fitted", ylab = "Residuals",
+      main = "Reciprocal response", pch = 16 )
+
+### Infine, eseguiamo una Cross-Validation
+...
