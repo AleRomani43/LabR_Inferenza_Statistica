@@ -11,7 +11,6 @@ library(GGally)
 library(Matrix)
 library(faraway)
 library(BAS)
-library(RColorBrewer)
 
 ### iniziamo con l'importazione, la pulizia e la visualizzazione del dataset
 
@@ -80,7 +79,7 @@ p = first$rank
 n = dim(PP)[1] # = 333
 
 plot(first$fitted.values, lev, ylab = "Leverages", main = "Plot of Leverages", 
-      pch = 16, col = 'black' )
+     pch = 16, col = 'black' )
 abline( h = 2 * p/n, lty = 2, col = 'red' )
 
 watchout_points_lev = lev[ which( lev > 2 * p/n  ) ]
@@ -110,9 +109,9 @@ watchout_rstd = std_res[ watchout_ids_rstd ]
 plot(first$fitted.values, std_res, ylab = "Standardized Residuals", main = "Standardized Residuals")
 abline( h = c(-2,2), lty = 2, col = 'orange' )
 points(first$fitted.values[watchout_ids_rstd], 
-        std_res[watchout_ids_rstd], col = 'red', pch = 16 )
+       std_res[watchout_ids_rstd], col = 'red', pch = 16 )
 points(first$fitted.values[watchout_ids_lev], 
-        std_res[watchout_ids_lev], col = 'orange', pch = 16 )
+       std_res[watchout_ids_lev], col = 'orange', pch = 16 )
 legend('topright', col = c('red','orange'), 
        c('Standardized Residuals', 'Leverages'), pch = rep( 16, 2 ), bty = 'n' )
 
@@ -135,17 +134,19 @@ watchout_Cdist = Cdist[ watchout_ids_Cdist ]
 
 par( mfrow = c( 1, 3 ) )
 plot(first$fitted.values, Cdist, pch = 16, xlab = 'Fitted values', 
-      ylab = 'Cooks Distance', main = 'Cooks Distance' )
+     ylab = 'Cooks Distance', main = 'Cooks Distance' )
 points(first$fitted.values[ watchout_ids_Cdist ], Cdist[ watchout_ids_Cdist ], 
-        col = 'green', pch = 16 )
+       col = 'green', pch = 16 )
 plot(first$fitted.values, std_res, pch = 16, xlab = 'Fitted values', 
-      ylab = 'Standardized Residuals', main = 'Standardized Residuals' )
+     ylab = 'Standardized Residuals', main = 'Standardized Residuals' )
 points(first$fitted.values[ watchout_ids_rstd ], std_res[ watchout_ids_rstd ], 
-        col = 'pink', pch = 16 )
+       col = 'pink', pch = 16 )
 plot(first$fitted.values, lev, pch = 16, xlab = 'Fitted values', 
-      ylab = 'Leverages', main = 'Leverages' )
+     ylab = 'Leverages', main = 'Leverages' )
 points(first$fitted.values[ watchout_ids_lev ], lev[ watchout_ids_lev ],
-        col = 'orange', pch = 16 )
+       col = 'orange', pch = 16 )
+
+par( mfrow = c( 1, 1 ) )
 
 # costruiamo il modello senza punti influenti rispetto alla distanza di Cook 
 # e confrontiamo il risultato con il modello precedente (sul set di dati completo).
@@ -157,6 +158,9 @@ abs((first$coefficients - fourth$coefficients) / first$coefficients)
 
 # calcoliamo il VIF, un indice di collinearità tra covariate (Variance Inflation Factor)
 vif(first) # non sono maggiori di 5, va bene
+
+species = as.factor(species)
+sex = as.factor(sex)
 
 ### consideriamo ora il modello completo di tutte le covariate, anche quelle categoriche
 cat = lm(mass ~ species + island + bill_length + bill_depth + flipper_length + sex, data = PP)
@@ -172,6 +176,7 @@ step(cat, direction = "backward" , trace = T)
 # il modello che ne risulta è il seguente
 cat2 = lm(mass ~ species + bill_length + bill_depth + flipper_length + sex, data = PP)
 summary(cat2)
+
 # una rapida osservazione: si noti come il modello finale non comprende islands, come avevamo ipotizzato
 # D'altronde, riguardando il plot ggpairs con le suddivisioni di colore per isola, si osserva una netta
 # distinzione dell' isola di Biscoe rispetto alle isole Dream e Torgersen. Saremmo dunque portati a pensare
@@ -201,3 +206,78 @@ shapiro.test(std_res_cat) # p-value del 74%, non rifiuto H_0 (la gaussianità de
 
 ### eseguiamo un'analisi One-way ANOVA per investigare se il peso dei pinguini è influenzato 
 ### prima dalla specie e poi dal sesso
+
+# iniziamo a farci un'idea descrittiva dei dati per avere indicazioni qualitative sulla presenza di 
+# differenze nella risposta a causa dell'appartenenza ad una o all'altra categoria.
+
+# l'analisi della varianza, nota con l'acronimo di ANOVA, è una tecnica statistica che ha come obiettivo il 
+# confronto tra le medie di un fenomeno aleatorio fra differenti gruppi di unità statistiche. 
+# Tale analisi viene affrontata tramite decomposizione della varianza.
+
+attach(PP)
+
+boxplot( mass ~ species, xlab = 'species', ylab = 'mass',
+         main = 'Penguins body mass according to species')
+abline( h = mean( mass ) )
+
+# numerosità dei gruppi
+tapply( mass, species, length )
+tapply( mass, species, mean )
+
+# Sembra che un qualche effetto ci sia, le medie appaiono diverse e 
+# sembra vi sia una dominanza stocastica delle distribuzioni dei pesi.
+
+species = as.factor(species)
+sex = as.factor(sex)
+
+# Verifichiamo che siano soddisfatte le ipotesi dell'ANOVA: omoschedasticità fra varianze dei gruppi
+# e normalità intragruppo
+
+# normalità intragruppo;
+n = length(species)
+ng = table(species)
+treat = levels(species)
+g = length(treat)
+
+Ps = tapply( mass, species, function( x ) ( shapiro.test( x )$p ) )
+# il p-value della specie Adelie è basso = > non posso accettare l'ipotesi di gaussianità per la specie Adelie
+
+# applico una trasformazione box-cox per invertire questa tendenza
+
+# Trova la lambda ottimale
+bc = boxcox(mass ~ species)
+lambda_opt = bc$x[which.max(bc$y)] # = 0.465 circa
+
+# Applica la trasformazione
+if(lambda_opt == 0) {
+  mass_bc = log(mass)
+} else {
+  mass_bc = (mass^lambda_opt - 1) / lambda_opt
+}
+
+# riverifichiamo l'ipotesi di normalità con la mass_bc
+Ps = tapply( mass_bc, species, function( x ) ( shapiro.test( x )$p ) )
+# p-value alti, accetto l'ipotesi
+
+# omoschedasticità fra i gruppi = varianze dei gruppi omogenee
+Var_bc = tapply( mass_bc, species, var )
+
+# Bartlett's test
+# H_0: sigma_1 = sigma_2 = ... = sigma_g  vs H_1: H_0^C
+# Il test di Bartlett assume che le osservazioni appartenenti ai vari gruppi siano iid da una Normale. 
+bartlett.test( mass_bc, species )
+
+# ora che abbiamo verificato che le ipotesi sono soddisfatte possiamo procedere con una One-Way ANOVA (sulla trasformazione)
+fit = aov( mass ~ species )
+summary( fit )
+fit$coefficients # restituisce la media del gruppo di riferimento più i (g-1) tau (le specie)
+
+# Affermiamo quindi che c'è differenza delle medie fra i gruppi.
+###### REMINDER: bisogna ricordare che abbiamo eseguito una box-cox, quindi reinterpretare il risultato
+
+detach(PP)
+
+### eseguiamo adesso un'analisi Two-ways ANOVA per capire se c’è interazione tra species e sex nel determinare mass
+
+# visualizziamo i dati
+
