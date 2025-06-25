@@ -159,8 +159,8 @@ abs((first$coefficients - fourth$coefficients) / first$coefficients)
 # calcoliamo il VIF, un indice di collinearità tra covariate (Variance Inflation Factor)
 vif(first) # non sono maggiori di 5, va bene
 
-species = as.factor(species)
-sex = as.factor(sex)
+species = as.factor(PP$species)
+sex = as.factor(PP$sex)
 
 ### consideriamo ora il modello completo di tutte le covariate, anche quelle categoriche
 cat = lm(mass ~ species + island + bill_length + bill_depth + flipper_length + sex, data = PP)
@@ -205,7 +205,7 @@ qqline(std_res_cat) # rispettano l'ipotesi
 shapiro.test(std_res_cat) # p-value del 74%, non rifiuto H_0 (la gaussianità dei residui)
 
 ### eseguiamo un'analisi One-way ANOVA per investigare se il peso dei pinguini è influenzato 
-### prima dalla specie e poi dal sesso
+### prima dalla specie
 
 # iniziamo a farci un'idea descrittiva dei dati per avere indicazioni qualitative sulla presenza di 
 # differenze nella risposta a causa dell'appartenenza ad una o all'altra categoria.
@@ -252,7 +252,7 @@ lambda_opt = bc$x[which.max(bc$y)] # = 0.465 circa
 if(lambda_opt == 0) {
   mass_bc = log(mass)
 } else {
-  mass_bc = (mass^lambda_opt - 1) / lambda_opt
+  mass_bc = (mass^lambda_opt)
 }
 
 # riverifichiamo l'ipotesi di normalità con la mass_bc
@@ -268,7 +268,7 @@ Var_bc = tapply( mass_bc, species, var )
 bartlett.test( mass_bc, species )
 
 # ora che abbiamo verificato che le ipotesi sono soddisfatte possiamo procedere con una One-Way ANOVA (sulla trasformazione)
-fit = aov( mass ~ species )
+fit = aov( mass_bc ~ species )
 summary( fit )
 fit$coefficients # restituisce la media del gruppo di riferimento più i (g-1) tau (le specie)
 
@@ -281,6 +281,11 @@ fit$coefficients # restituisce la media del gruppo di riferimento più i (g-1) t
 par( mfrow = c( 1,2 ) )
 boxplot( mass ~ species, data = PP )
 boxplot( mass ~ sex, data = PP )
+
+x11()
+par( mfrow = c( 1,2 ) )
+interaction.plot(species, sex, mass)
+interaction.plot(sex, species, mass)
 
 # verifichiamo le solite ipotesi di normalità tra combinazioni di gruppi (3x2) e omogeneità delle varianze tra gruppi
 tapply( mass, sex:species, function( x ) shapiro.test( x )$p ) # p-value alti, va bene
@@ -299,6 +304,3 @@ abline( 0, 1, lwd = 2, lty = 2, col = 'red' )
 shapiro.test(anova2$residuals)
 plot(anova2$fitted.values, anova2$residuals, xlab = "Fitted", ylab = "Residuals",
       main = "Reciprocal response", pch = 16 )
-
-### Infine, eseguiamo una Cross-Validation
-...
